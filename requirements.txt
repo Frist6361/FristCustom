@@ -4,3 +4,4 @@ sqlite3
 asyncio
 PyNaCl
 chat_exporter
+io
