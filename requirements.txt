@@ -2,3 +2,4 @@ disnake
 yt-dlp
 sqlite3
 asyncio
+PyNaCl
