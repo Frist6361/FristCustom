@@ -3,4 +3,3 @@ yt-dlp
 asyncio
 PyNaCl
 chat_exporter
-io
