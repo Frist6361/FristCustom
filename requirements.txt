@@ -1,6 +1,5 @@
 disnake
 yt-dlp
-sqlite3
 asyncio
 PyNaCl
 chat_exporter
