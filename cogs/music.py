@@ -67,6 +67,7 @@ class MusicCog(commands.Cog):
         await ctx.send('Начинаю поиск...', ephemeral=True)
 
         if "http://" in запрос or "https://" in запрос:
+            ydl_opts = {'format': 'bestaudio/best'}            
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 try:
                     info = ydl.extract_info(запрос, download=False)
