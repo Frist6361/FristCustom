@@ -35,6 +35,7 @@ class TicketCog(commands.Cog):
             json.dump(self.log_config, f, indent=4)
 
     @commands.slash_command(name="тикет")
+    @commands.has_permissions(manage_messages = True, manage_channels = True)
     async def ticket_setup(
         self,
         ctx,

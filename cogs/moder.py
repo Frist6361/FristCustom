@@ -78,6 +78,7 @@ class ModerationCog(commands.Cog):
         await log_channel.send(embed=embed)
 
     @commands.slash_command(name='рольмут', description='Настройка роли мута')
+    @commands.has_permissions(manage_messages = True, manage_channels = True)
     async def set_mute_role(
         self,
         ctx,
@@ -88,6 +89,7 @@ class ModerationCog(commands.Cog):
         await ctx.send(f'Роль мута успешно установлена: {роль.mention}', ephemeral=True)
 
     @commands.slash_command(name='бан', description='Забанить пользователя')
+    @commands.has_permissions(manage_messages = True, manage_channels = True)
     async def ban(
         self,
         ctx,
@@ -102,6 +104,7 @@ class ModerationCog(commands.Cog):
 
 
     @commands.slash_command(name='кик', description='Выгнать пользователя')
+    @commands.has_permissions(manage_messages = True, manage_channels = True)
     async def kick(
         self,
         ctx,
@@ -115,6 +118,7 @@ class ModerationCog(commands.Cog):
 
 
     @commands.slash_command(name='мут', description='Замутить пользователя на время')
+    @commands.has_permissions(manage_messages = True, manage_channels = True)
     async def mute(
         self,
         ctx,
@@ -160,6 +164,7 @@ class ModerationCog(commands.Cog):
 
 
     @commands.slash_command(name='размут', description='Размутить пользователя')
+    @commands.has_permissions(manage_messages = True, manage_channels = True)
     async def unmute(
         self,
         ctx,
