@@ -1,6 +1,6 @@
-import disnake
-from disnake.ext import commands
 import json
+from disnake.ext import commands
+import disnake
 import yt_dlp
 import asyncio
 
@@ -60,28 +60,20 @@ class MusicCog(commands.Cog):
                         await guild.voice_client.disconnect()
 
     @commands.slash_command(name="играть", description="Воспроизвести музыку")
-    async def play(self, ctx, запрос: str):
+    async def play(self, ctx, ссылка: str):
         member = ctx.author
         if not member.voice or not member.voice.channel:
             return await ctx.send("Вы должны быть в голосовом канале, чтобы использовать эту команду.", ephemeral=True)
         await ctx.send('Начинаю поиск...', ephemeral=True)
 
-        if "http://" in запрос or "https://" in запрос:
-            ydl_opts = {'format': 'bestaudio/best'}            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                try:
-                    info = ydl.extract_info(запрос, download=False)
-                    url = info['url'] if 'url' in info else None
-                except yt_dlp.utils.DownloadError:
-                    return await ctx.send("Не удалось получить результаты для данного запроса.", ephemeral=True)
-        else:
-            ydl_opts = {'format': 'bestaudio/best'}
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                try:
-                    info = ydl.extract_info(f"ytsearch:{запрос}", download=False)['entries'][0]
-                    url = info['url'] if 'url' in info else None
-                except yt_dlp.utils.DownloadError:
-                    return await ctx.send("Не удалось получить результаты для данного запроса.", ephemeral=True)
+        ydl_opts = {'format': 'bestaudio/best'}
+        FFMPEG_OPTIONS = {'before_options': '-reconnect 1', 'options': '-vn'}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(ссылка, download=False)
+            url = info['url'] if 'url' in info else None
+
+            if not url:
+                return await ctx.send("Не удалось получить прямой URL для данного запроса.", ephemeral=True)
 
             guild_id = str(ctx.guild.id)
             if guild_id not in self.queue:
