@@ -1,9 +1,9 @@
 import disnake
 from disnake.ext import commands
-from disnake import ui
 import json
-from chat_exporter import chat_exporter
 import io
+from chat_exporter import chat_exporter
+
 class TicketCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -35,34 +35,53 @@ class TicketCog(commands.Cog):
             json.dump(self.log_config, f, indent=4)
 
     @commands.slash_command(name="тикет")
-    async def ticket_setup(self, ctx, категория: disnake.CategoryChannel, канал: disnake.TextChannel, админ: disnake.Role):
+    async def ticket_setup(
+        self,
+        ctx,
+        категория: disnake.CategoryChannel = commands.Param(desc="Выберите категорию для тикетов"),
+        канал: disnake.TextChannel = commands.Param(desc="Выберите текстовый канал для тикетов"),
+        админ: disnake.Role = commands.Param(desc="Выберите роль модераторов"),
+        заголовок_команды: str = commands.Param(desc="Заголовок тикета при вызове команды"),
+        описание_команды: str = commands.Param(desc="Описание тикета при вызове команды"),
+        цвет_команды: str = commands.Param(desc="Цвет тикета (HEX) при вызове команды (без #)"),
+        заголовок_открытия: str = commands.Param(desc="Заголовок тикета при открытии"),
+        описание_открытия: str = commands.Param(desc="Описание тикета при открытии"),
+        цвет_открытия: str = commands.Param(desc="Цвет тикета (HEX) при открытии(без #)")
+    ):
         guild_id = str(ctx.guild.id)
-        self.config[guild_id] = {
+        channel_id = str(канал.id)
+        self.config[guild_id] = self.config.get(guild_id, {})
+        self.config[guild_id][channel_id] = {
             'category_id': категория.id,
-            'channel_id': канал.id,
-            'moderators_role_id': админ.id
+            'moderators_role_id': админ.id,
+            'embed_title_command': заголовок_команды,
+            'embed_description_command': описание_команды,
+            'embed_color_command': int(цвет_команды, 16) if цвет_команды.startswith("#") else int(цвет_команды, 16),
+            'embed_title_opening': заголовок_открытия,
+            'embed_description_opening': описание_открытия,
+            'embed_color_opening': int(цвет_открытия, 16) if цвет_открытия.startswith("#") else int(цвет_открытия, 16)
         }
         self.save_config()
         await ctx.send(f"Настройки тикетов сохранены: Категория - {категория.mention}, Канал - {канал.mention}, Роль модераторов - {админ.mention}", ephemeral=True)
         embed = disnake.Embed(
-            title="Тех. Поддержка",
-            description="📦 **Нажмите на кнопку чтобы открыть тикет**",
-            color=disnake.Color.blurple()
+            title=заголовок_команды,
+            description=описание_команды,
+            color=disnake.Color(int(цвет_команды, 16) if цвет_команды.startswith("#") else int(цвет_команды, 16))
         )
         await канал.send(
             embed=embed,
             components=[
                 disnake.ui.Button(
-                    label="📦",
+                    label="Отрыть тикет",
                     style=disnake.ButtonStyle.success,
                     custom_id="create_ticket"
                 ),
             ]
         )
 
-    async def create_ticket_channel(self, guild, user):
+    async def create_ticket_channel(self, guild, user, channel_id):
         guild_id = str(guild.id)
-        category_id = self.config[guild_id]['category_id']
+        category_id = self.config[guild_id][channel_id]['category_id']
         category = guild.get_channel(category_id)
 
         if category is None:
@@ -79,11 +98,15 @@ class TicketCog(commands.Cog):
         await ticket_channel.edit(overwrites=overwrites)
         return ticket_channel
 
-    async def send_ticket_embed(self, channel, user, staff_role):
+    async def send_ticket_embed(self, channel, user, staff_role, channel_id, is_command=True):
+        embed_title_key = 'embed_title_command' if is_command else 'embed_title_opening'
+        embed_description_key = 'embed_description_command' if is_command else 'embed_description_opening'
+        embed_color_key = 'embed_color_command' if is_command else 'embed_color_opening'
+
         embed = disnake.Embed(
-            title=f"Тикет",
-            description="Вы открыли тикет",
-            color=disnake.Color.blurple()
+            title=self.config[str(channel.guild.id)][channel_id][embed_title_key],
+            description=self.config[str(channel.guild.id)][channel_id][embed_description_key],
+            color=disnake.Color(self.config[str(channel.guild.id)][channel_id][embed_color_key])
         )
 
         content = f"{user.mention} {staff_role.mention}"
@@ -99,17 +122,25 @@ class TicketCog(commands.Cog):
     @commands.Cog.listener()
     async def on_button_click(self, inter):
         if inter.component.custom_id == "create_ticket":
+            if inter.guild is None:
+                return
+
             user = inter.user
             guild = inter.guild
             guild_id = str(guild.id)
-            staff_role_id = self.config[guild_id]['moderators_role_id']
+            channel_id = str(inter.channel.id)
+
+            if guild_id not in self.config or channel_id not in self.config[guild_id]:
+                return await inter.send("Настройки тикетов не найдены для этого сервера или канала.", ephemeral=True)
+
+            staff_role_id = self.config[guild_id][channel_id]['moderators_role_id']
             staff_role = guild.get_role(staff_role_id)
 
             if staff_role is None:
                 return await inter.send("Не удалось найти роль модератора. Укажите корректный ID роли.", ephemeral=True)
 
-            ticket_channel = await self.create_ticket_channel(guild, user)
-            await self.send_ticket_embed(ticket_channel, user, staff_role)
+            ticket_channel = await self.create_ticket_channel(guild, user, channel_id)
+            await self.send_ticket_embed(ticket_channel, user, staff_role, channel_id, is_command=False)
             await inter.send(f"Тикет {ticket_channel.mention} успешно создан!", ephemeral=True)
 
         elif inter.component.custom_id == "close_ticket":
@@ -144,7 +175,6 @@ class TicketCog(commands.Cog):
                 print("Не найден ID канала для логов в конфигурации")
 
             await channel.delete()
-
 
 def setup(bot):
     bot.add_cog(TicketCog(bot))
