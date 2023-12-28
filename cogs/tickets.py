@@ -66,7 +66,7 @@ class TicketCog(commands.Cog):
         await ctx.send(f"Настройки тикетов сохранены: Категория - {категория.mention}, Канал - {канал.mention}, Роль модераторов - {админ.mention}", ephemeral=True)
         embed = disnake.Embed(
             title=заголовок_команды,
-            description=описание_команды,
+            description=описание_команды.replace("\\n", "\n"),
             color=disnake.Color(int(цвет_команды, 16) if цвет_команды.startswith("#") else int(цвет_команды, 16))
         )
         await канал.send(
@@ -109,6 +109,9 @@ class TicketCog(commands.Cog):
             description=self.config[str(channel.guild.id)][channel_id][embed_description_key],
             color=disnake.Color(self.config[str(channel.guild.id)][channel_id][embed_color_key])
         )
+
+        # Добавление переносов строк в описание
+        embed.description = embed.description.replace("\\n", "\n")
 
         content = f"{user.mention} {staff_role.mention}"
 
