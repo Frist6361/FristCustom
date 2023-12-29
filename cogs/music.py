@@ -111,7 +111,7 @@ class MusicCog(commands.Cog):
     async def skip(self, ctx):
         guild_id = str(ctx.guild.id)
         ffmpeg_path = "ffmpeg/ffmpeg.exe"
-        
+
         if ctx.guild.voice_client and ctx.guild.voice_client.is_playing():
             ctx.guild.voice_client.stop()
             await ctx.send("Трек пропущен.", ephemeral=True)
