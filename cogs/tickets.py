@@ -80,7 +80,7 @@ class TicketCog(commands.Cog):
             ]
         )
 
-    async def create_ticket_channel(self, guild, user, channel_id):
+    async def create_ticket_channel(self, guild, user, channel_id, moder):
         guild_id = str(guild.id)
         category_id = self.config[guild_id][channel_id]['category_id']
         category = guild.get_channel(category_id)
@@ -94,6 +94,7 @@ class TicketCog(commands.Cog):
             guild.default_role: disnake.PermissionOverwrite(read_messages=False),
             guild.me: disnake.PermissionOverwrite(read_messages=True, send_messages=True),
             user: disnake.PermissionOverwrite(read_messages=True, send_messages=True),
+            moder: disnake.PermissionOverwrite(read_messages=True, send_messages=True)
         }
 
         await ticket_channel.edit(overwrites=overwrites)
@@ -110,7 +111,7 @@ class TicketCog(commands.Cog):
             color=disnake.Color(self.config[str(channel.guild.id)][channel_id][embed_color_key])
         )
 
-        # Добавление переносов строк в описание
+
         embed.description = embed.description.replace("\\n", "\n")
 
         content = f"{user.mention} {staff_role.mention}"
@@ -143,7 +144,7 @@ class TicketCog(commands.Cog):
             if staff_role is None:
                 return await inter.send("Не удалось найти роль модератора. Укажите корректный ID роли.", ephemeral=True)
 
-            ticket_channel = await self.create_ticket_channel(guild, user, channel_id)
+            ticket_channel = await self.create_ticket_channel(guild, user, channel_id, staff_role)
             await self.send_ticket_embed(ticket_channel, user, staff_role, channel_id, is_command=False)
             await inter.send(f"Тикет {ticket_channel.mention} успешно создан!", ephemeral=True)
 
