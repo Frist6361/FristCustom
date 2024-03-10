@@ -90,27 +90,26 @@ async def ветки(
 
 @bot.event
 async def on_message(message):
-    # Загрузка данных о реакциях
     reactions_data = load_reactions_data()
     thread_data = load_thread_data()
 
-    # Проверка, существует ли запись для канала в reactions_data
     channel_id = str(message.channel.id)
-    if channel_id not in reactions_data:
-        return
-
-    for emoji, should_react in reactions_data[channel_id].get('emojis', {}).items():
-        if should_react and not (message.author.bot or message.is_system()):
-            await message.add_reaction(emoji)
+    if channel_id in reactions_data:
+        for emoji, should_react in reactions_data[channel_id].get('emojis', {}).items():
+            if should_react and not (message.author.bot or message.is_system()):
+                await message.add_reaction(emoji)
 
 
-    for thread_name, should_create in thread_data[str(message.channel.id)].get('threads', {}).items():
-        if should_create:
-            thread = await message.create_thread(name=thread_name)
 
-            welcome_message = await thread.send(f".")
+    if channel_id in thread_data:
+        for thread_name, should_create in thread_data[str(message.channel.id)].get('threads', {}).items():
+            if should_create:
+                thread = await message.create_thread(name=thread_name)
 
-            await welcome_message.delete()
+                welcome_message = await thread.send(f".")
+
+                await welcome_message.delete()
+
 
 
 
